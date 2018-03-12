@@ -5,3 +5,37 @@ db.company.aggregate(
         {   $sort    : { _id : 1 }}        
     ]
 )
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+db.analystic.aggregate(
+{
+    "$project": {
+        "y": {
+            "$year": "$time"
+        },
+        "m": {
+            "$month": "$time"
+        },
+        "d": {
+            "$dayOfMonth": "$time"
+        }
+    }
+},
+{
+    "$group": {
+        "_id": {
+            "year": "$y",
+            "month": "$m",
+            "day": "$d"
+        },
+        count: {
+            "$sum": 1
+        }
+    }
+},
+{
+    $sort: {
+        "_id.year": 1,
+        "_id.month": 1,
+        "_id.day": 1
+    }
+})
