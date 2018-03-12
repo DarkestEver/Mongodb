@@ -1,0 +1,6 @@
+db.credit_utilization_log.find()    
+    .forEach( function(item){
+            item.createddate = new Date(item.createddate);
+            db.credit_utilization_log.save(item);
+    }
+)
