@@ -1,0 +1,44 @@
+
+import pymongo as mondb  # Import MongoDB Library
+import multiprocessing as mp  # Import Multiprocessing
+import pymysql
+import pandas as pd
+import json 
+import math
+
+# MySQL Config
+myConfig = {'host': 'localhost',
+            'username': 'root',
+            'password': '',
+            'db': 'db_idata_v1_dev',
+            'tablename': 'bf_idata_v2',
+            'mongo_connection':'mongodb://172.16.10.73:27017/db_idata_v3',
+            'bulk_import_size':10000
+            }
+
+moncon = mondb.MongoClient(myConfig['mongo_connection'])
+mondb = moncon.db_idata_v3.idata3
+mycon = pymysql.connect(myConfig['host'], myConfig['username'], myConfig['password'], myConfig['db'])
+
+def count_number_of_rows(table_name):
+     num = pd.read_sql('SELECT count(1) as count FROM ' + table_name, con=mycon)
+     return num['count'][0]
+def fetch_records(table_name, limit, offset):
+    df = pd.read_sql('SELECT * FROM ' + table_name + ' limit ' + limit +',' + offset , con=mycon)
+    return df
+
+def run():
+    cnt = count_number_of_rows(myConfig['tablename'])
+    if cnt > 0:
+        divident = myConfig['bulk_import_size']
+        number_of_loop = math.ceil(cnt/divident)
+        for i in range(1,number_of_loop + 1):
+            end = i*divident - divident
+            new_df =  fetch_records(myConfig['tablename'], str(end), str(divident))
+            records = json.loads(new_df.T.to_json()).values()
+            mondb.insert_many(records)
+            print('importing set from ', end, ' - ', end + divident)
+            print(len(new_df ), ' records imported')
+    else:
+        print('no records found in mysql table')
+        
