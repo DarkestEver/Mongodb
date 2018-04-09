@@ -1,0 +1,12 @@
+use admin
+db.createUser(
+   {
+     user: "appAdmin",
+     pwd: "password",
+     roles:
+       [
+         { role: "readWrite", db: "config" },
+         "clusterAdmin"
+       ]
+   }
+)
