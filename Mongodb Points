@@ -1,0 +1,62 @@
+
+---- NoSql-----
+https://www.w3resource.com/mongodb/nosql.php
+What is Nosql?
+Why NoSQL? 
+RDBMS vs NoSQL
+NoSQL pros/cons
+NoSQL Categories
+
+----Mongodb-----
+Prerequisites
+Download - https://www.mongodb.org/downloads
+Installion - https://docs.mongodb.com/tutorials/install-mongodb-on-windows/
+
+--Basic Database Commands--
+List database
+Select database
+Delete Database
+
+---Collection ---
+List Collection
+Select Collection
+Drop Colection
+
+--- Document----
+CRUD
+limit
+sort
+skip
+like
+in
+
+-- Pipeline ---
+group
+match
+projection
+add field
+max
+min
+sum
+count
+avg
+unwind
+
+Compare SQL n Mongo
+
+--- Backup/Restore
+
+--- Modeling Embedded Relationships
+
+--- Database References
+
+--- Covered Query
+
+--- Text Search
+--- Analyzing explain
+
+
+
+
+
+
