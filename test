@@ -1,0 +1,55 @@
+def search(Page_content,data_dic = {}):
+    soup = BeautifulSoup(Page_content, 'html.parser')
+    ele = soup.find_all(class_= "row-fluid result-row company-list")
+    for e in ele:
+        json_dict = {}
+        business_name = e.select('span.span8 > h5')[0].text.strip()
+        province_name = e.select('span.span4 > span > span.province.bc-float-left')[0].text.strip()
+        country_name = e.select('span.span4 > span > span.country.bc-float-right')[0].text.strip()
+        business_url = e.find_all('a', href=True)[0]['href']
+        json_dict['business_name'] = business_name
+        json_dict['province_name'] = province_name
+        json_dict['country_name'] = country_name
+        json_dict['business_url'] = business_url
+        if len(data_dic) > 0:
+            json_dict.update(data_dic)        
+        insert_mongodb(json_dict)
+
+if __name__ == "__main__":
+    getFreeProxies()
+    df = pd.read_csv('sic-codes.csv')
+    for ind, row in df.iterrows():
+        sic_code = row[3]
+        url_l = "https://siccode.com/en/business-list/sic%3A" + str( sic_code)
+        p_i = 1
+        while p_i <= 10:
+            url = url_l + "/page/" + str(i)
+            p_i = p_i + 1
+            index, proxy = getRandomProxy()
+            print('working proxi',proxy['ip'] + ':' + proxy['port'] )
+            #url = 'https://siccode.com/en/business-list/sic%3A0783/page/1'
+            req = Request(url)
+            req.set_proxy(proxy['ip'] + ':' + proxy['port'], 'https')
+            req.add_header('User-Agent', ua.random)
+            try:
+                conn = urlopen(req,timeout=20)
+                print('connected')
+            except urllib.error.HTTPError as e:
+                isUrlDone = True
+                print('HTTPError: {}'.format(e.code))
+            except urllib.error.URLError as e:
+                print('URLError: {}'.format(e.reason))
+                deleteProxyFromList(index)
+            except timeout:
+                print('socket timed out - URL %s', url)
+            else:
+                html_text = conn.read().decode('utf8')
+                print(html_text)
+                if 'No businesses found under current search term'  in html_text: 
+                    p_i = 11
+                else:
+                    dict_company = {}
+                    dict_company['proxyip'] = proxy['ip']  + ":" + proxy['port']
+                    dict_company['sic_code'] = sic_code
+                    dict_company['url'] = conn.geturl()
+                    search(html_text, dict_company)
