@@ -1,0 +1,15 @@
+df = pd.read_csv(r"D:\linkedin crawling\udc csv\job functon search.csv",encoding='ISO_8859_5')
+df_job_level = pd.read_csv(r"D:\linkedin crawling\udc csv\job level search .csv",encoding='ISO_8859_5')
+def get_jcriteria_search(df,jobtitle):
+    title = jobtitle.lower()
+    for index, row in df.iterrows():
+        search_term = row['search'].lower()
+        criteria = row['criteria'].lower()
+        #print(search_term,criteria )
+        if criteria == 'contains' and search_term in title:
+            return row['return']
+        if criteria == 'begins' and title.startswith(search_term, 0,len(title)) == search_term:
+            return row['return']
+        if criteria  == 'end' and title[len(title) - len(search_term):] == search_term:
+            return row['return']
+    
