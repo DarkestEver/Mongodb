@@ -1,0 +1,17 @@
+
+import psycopg2
+from sqlalchemy import create_engine
+import urllib
+import pandas as pd 
+import xlsxwriter
+
+engine = create_engine('postgresql+psycopg2://postgres:%s@localhost:5432/postgres' % urllib.parse.quote_plus('pass'))
+
+for i in range(1,2):    
+    limit = 100000
+    offset = i 
+    data=pd.read_sql_query("select * from prospects_2m where linked_user_name is not null order by id asc OFFSET " + str(offset) + " LIMIT " + str(limit),con=engine)
+    writer = pd.ExcelWriter( 'data_' + str(offset) + '.xlsx', engine='xlsxwriter', options={'strings_to_urls': False})
+    data.to_excel(writer,'raw_data')
+    writer.save()
+    print(offset, ' done')
