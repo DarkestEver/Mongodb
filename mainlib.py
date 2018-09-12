@@ -10,7 +10,6 @@ import os
 from selenium import webdriver
 import chromewithproxy
 import connection as connect
-import pandas as pd
 from selenium.webdriver.common.keys import Keys
 
 search_limit_url = 100
@@ -43,17 +42,19 @@ def create_url(profile_country,employee_size,industry_type,total_exp, cur_pos_yr
         "&facet.I=" , industry_type ,
         "&facet.CS=" , employee_size ,
         "&facet.YP=" , cur_pos_yr ,
+        "&facet.SE=8&facet.SE=7&facet.SE=6&facet.SE=5&facet.SE=4"
         "&facet.TE=" , total_exp ,
         "&count=25&start=0&EL=auto&updateHistory=true&trackingInfoJson.contextId=" , trackingInfoJson]
     if ui_type == 2:
         url = ["https://www.linkedin.com/sales/search/people?" ,
         "companySize=" , employee_size ,
         "&geo=" , profile_country , "%3A0" ,
-        "&industry" , industry_type ,
+        "&industry=" , industry_type ,
         "&logHistory=true" ,
         "&logId=" , str(logid) ,
         "&page=1" ,
         "&searchSessionId=" , trackingInfoJson ,
+        "&seniority=4%2C5%2C6%2C7%2C8",
         "&tenureAtCurrentPosition=" , cur_pos_yr ,
         "&yearsOfExperience=" , total_exp]
     
@@ -68,6 +69,7 @@ def check_ui_type(driver):
 
 def get_loginid_tractsess(driver,ui_type=1):
     if ui_type == 1:
+        sleep(5)
         log_mesage('old ui')
         log_mesage('excludes-suggestion 1')
         driver.find_element_by_class_name('excludes-suggestion-link').click()
@@ -105,10 +107,10 @@ def hideglobalhelp(driver,ui_type=1):
     elif ui_type==2:
         try:
             driver.execute_script("document.getElementsByClassName('global-nav-help-button')[0].style.visibility='hidden'; ")
-            log_mesage('new ui - hidding global buton')
+            log_mesage('new ui - hidding global buton1')
         except:
             driver.execute_script("$('.global-nav-help-button').hide(); ")
-            log_mesage('new ui - hidding global buton')
+            log_mesage('new ui - hidding global buton2')
             pass
 
 
@@ -140,12 +142,14 @@ def click_next_pagination(driver,ui_type=1):
     elif ui_type==2:
          sleep(randsec())
          try:
-            driver.find_element_by_css_selector(".search-results__pagination-next-button").click()
+            print('click next try 1')
+            driver.find_element_by_class_name("search-results__pagination-next-button").click()
             scrap = True
          except:
             try:
                 sleep(randsec())
-                driver.find_element_by_css_selector(".search-results__pagination-next-button").click()
+                print('click next try 2')
+                driver.find_element_by_class_name("search-results__pagination-next-button").click()
                 scrap = True
             except:
                 scrap = False
@@ -215,9 +219,14 @@ def check_more_pagination(driver, ui_type=1):
             return True
     elif ui_type==2:
         try:
-            el3 = driver.find_elements_by_css_selector(".search-results__pagination-next-button").get_property('disabled')
-            return el3
+            print('is next enabled')
+            el3 = driver.find_elements_by_css_selector(".search-results__pagination-next-button")[0].get_property('disabled')
+            if el3 ==  False:
+                return True
+            else:
+                return False
         except:
+            print('error false')
             return False
    
 def usernames(name):
@@ -400,12 +409,13 @@ def if_empty_search(driver):
         else:
             return True
     except:
-        return False
+        return True
     
 def if_account_blocked(driver):
     try:
         txt = driver.find_element_by_id('stream-container').text
-        if 'limit' in txt and 'extensive' in txt and 'used' in txt :
+        if 'we were unable to process your request' in txt :
+            print('account blocked')
             return False
         else:
             return True
@@ -436,8 +446,9 @@ def findcount(driver, url, ui_type=1):
         else:
             return 2
     
-def scarp(driver):
-    #linkedin_network(driver)
+def scarp(driver, diff_quit=14400):
+    linkedin_network(driver)
+    sec_then = time.time()
     try:
         global linked_user_name
         log_mesage('navigating sales ')
@@ -486,6 +497,9 @@ def scarp(driver):
                 print('new url ')
                 connect.set_account_urlcount()
                 time.sleep(randsec())
+                driver.execute_script( 'window.scrollTo(0,document.body.scrollHeight);')
+                time.sleep(1)
+                driver.execute_script( 'window.scrollTo(0,document.body.scrollHeight);')
                 hideglobalhelp(driver,ui_type)
                 if if_account_blocked(driver) == False:
                     log_mesage('account blocked')
@@ -500,6 +514,7 @@ def scarp(driver):
                         if if_account_blocked(driver) and if_empty_search(driver):
                             pagination = pagination + 1
                             count_p = 0
+                            result_container = ""
                             if ui_type == 1:
                                 result_container = driver.find_elements_by_css_selector('#results-list > li')
                             elif ui_type == 2:
@@ -538,14 +553,14 @@ def scarp(driver):
                             log_mesage('account blocked')
                             connect.set_account_block()
                             return 
-            
+                        """
                         if count_p == 0:
                             scrap = False
                             driver.quit()
                             log_mesage('crossed limit URL')
                             connect.set_account_overlimit()
                             return 'over limit'
-                        
+                        """
                         if check_more_pagination(driver, ui_type):
                             scrap = click_next_pagination(driver,ui_type)
                             sleep(3)
@@ -560,9 +575,17 @@ def scarp(driver):
             elif chk_findcount == 0 :
                 print('0 count')
                 connect.update_url(rowid)
+            
             elif chk_findcount == 2:
                 connect.set_account_notrunning()
                 return 
+            sec_now = time.time()
+            if int(sec_now - sec_then) > diff_quit :
+                try:
+                    driver.quit()
+                    log_mesage('quiting forcely : time exceed 4 hr') 
+                except:
+                    pass
         connect.set_account_notrunning()
         #driver.get('https://www.linkedin.com/m/logout/')
         #send_email(linked_user_name +' ' + datetime.now().strftime('%Y/%m/%d') + ' ended',log_mesage())
@@ -585,19 +608,19 @@ def linkedin_network(driver):
     time.sleep(randsec())
     driver.execute_script( 'window.scrollTo(0,document.body.scrollHeight);')
     sleep(randint(1,5))
-    for i in range(1,3):
+    for i in range(1,2):
         driver.get('https://www.linkedin.com/mynetwork/')
         time.sleep(randsec())
         try:
              driver.execute_script("$('.artdeco-scrolling-container > artdeco-tablist > artdeco-tab')[1].click()")
         except:
-             pass
-        time.sleep(randsec()) 
-        try:
-            connect_network = " $('button[data-control-name=" + '"invite"]' + "').each(function(index, value) {setTimeout(function() { jQuery(value).trigger('click'); }, index * 1000);});"
-            driver.execute_script( connect_network)
-        except:
-             pass
+            pass
+            time.sleep(randsec()) 
+            try:
+                connect_network = " $('button[data-control-name=" + '"invite"]' + "').each(function(index, value) {setTimeout(function() { jQuery(value).trigger('click'); }, index * 1000);});"
+                driver.execute_script( connect_network)
+            except:
+                 pass
         time.sleep(randsec())
     try:
         driver.get('https://www.linkedin.com/me/profile-views/urn:li:wvmp:summary/')
@@ -624,9 +647,9 @@ def randsec():
 
 def send_email(subject, body):
     import smtplib
-    FROM = 'nayalaunch@gmail.com'
+    FROM = 'yogesh@linkedinextract.in'
     user = FROM
-    pwd = "k@8097755641" 
+    pwd = "k@80905510041" 
     recipient = 'nayalaunch@gmail.com'
     TO = recipient if isinstance(recipient, list) else [recipient]
     SUBJECT = subject
@@ -636,7 +659,7 @@ def send_email(subject, body):
     message = """From: %s\nTo: %s\nSubject: %s\n\n%s
     """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP("smtp.zoho.com", 587)
         server.ehlo()
         server.starttls()
         server.login(user, pwd)
