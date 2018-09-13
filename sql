@@ -7,3 +7,6 @@ delete
 	FROM chunk.n_za
 	where emp_code = 'A' or industry_code in (96,84)
 	
+update chunk.n_au  set countrycode = regexp_replace(countrycode, '\s', '', 'g'),
+status = 0, 
+emp_code= regexp_replace(emp_code, '\s', '', 'g')
