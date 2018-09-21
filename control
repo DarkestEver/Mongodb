@@ -1,0 +1,41 @@
+    public function generateRandomString($length = 10) {
+        $characters = 'abcdefghijklmnopqrstuvwxyz';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
+    }
+
+    public function ajax_udc_tag_json()
+    {
+        $search = preg_quote(isset($_REQUEST['search']) ? $_REQUEST['search'] : '');
+        $type = preg_quote(isset($_REQUEST['udctype']) ? $_REQUEST['udctype'] : '');
+
+        $table = '';
+        $text = '';
+        $value = '';
+        $where = '';
+        if ($type =='industry')
+        {   
+            $table = 'udc_industry';
+            $text = 'industry_name';
+            $value = 'industry_id';
+            $where = " lower(industry_name) like '" . trim(strtolower($search)) . "%'";    
+        }
+        elseif ($type=='country') {
+            $table = 'udc_country';
+            $text = 'country_name';
+            $value = 'country_id';
+            $where = " lower(country_name) like '" . trim(strtolower($search)) . "%'";   
+        }
+        
+        $column = $text .  ' as text, '.$value.' as value '   ;
+        
+        $this->load->model('Postgres_model');
+        $this->Postgres_model->connect();
+        $results = $this->Postgres_model->getRow($table,$column,$where);
+        $this->Postgres_model->close();
+        echo json_encode($results);
+    }
