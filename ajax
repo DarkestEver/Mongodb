@@ -1,0 +1,150 @@
+function udc_tags(selector , udctype)
+{
+	$(selector).tokenize2({
+	searchMinLength: 3,
+    dataSource: function(term, object){
+        $.ajax('ajax_udc_tag_json', {
+            data: { search: term, udctype: udctype },
+            dataType: 'json',
+            success: function(data){
+                var $items = [];
+                $.each(data, function(k, v){
+                    $items.push(v);
+                });
+                object.trigger('tokenize:dropdown:fill', [$items]);
+            }
+        });
+    }
+});
+
+$(selector).on("tokenize:tokens:add", function (event, value, text){
+   oldValue = getParameterByName(udctype);
+   new_value = add_param_val(value, oldValue);
+   changeUrl(udctype,new_value)
+});
+
+$(selector).on("tokenize:tokens:remove", function (event, value, text){
+   oldValue = getParameterByName(udctype);
+   new_value = remove_param_val(value, oldValue);
+   removeQString(udctype,new_value);
+});
+
+}
+
+
+udc_tags('.tokenize-source-demo-3' , 'industry');
+
+udc_tags('.tokenize-source-demo-2' , 'country');
+
+
+//http://www.fbchandra.com/developers/add-remove-query-string-url-without-reloading-page
+
+//Used to display data in webpage from ajax
+function sendAjaxReq(objQueryString) {
+	
+}
+
+//Define variable
+var objQueryString={};
+
+//Get querystring value
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+    results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+//Add or modify querystring
+function changeUrl(key,value,dtype = 'add') {
+	//Get query string value
+	var searchUrl=location.search;
+	if(searchUrl.indexOf("?")== "-1") {
+		var urlValue='?'+key+'='+value;
+		history.pushState({state:1, rand: Math.random()}, '', urlValue);
+	}
+	else {
+		//Check for key in query string, if not present
+		if(searchUrl.indexOf(key)== "-1") {
+			var urlValue=searchUrl+'&'+key+'='+value;
+		}
+		else {	//If key present in query string
+			oldValue = getParameterByName(key);
+			if(searchUrl.indexOf("?"+key+"=")!= "-1"  ) {
+				urlValue = searchUrl.replace('?'+key+'='+oldValue,'?'+key+'='+value);
+			}
+			else if(split_para_value(value, oldValue)==false) {
+				urlValue = searchUrl.replace('&'+key+'='+oldValue,'&'+key+'='+value);	
+			}
+			else
+		    {
+				urlValue = searchUrl.replace('&'+key+'='+oldValue,'&'+key+'='+value);	
+			}
+		}
+		history.pushState({state:1, rand: Math.random()}, '', urlValue);
+		//history.pushState function is used to add history state.
+		//It takes three parameters: a state object, a title (which is currently ignored), and (optionally) a URL.
+	}
+	objQueryString.key=value;
+	sendAjaxReq(objQueryString);
+}
+
+//Function used to remove querystring
+function removeQString(key,value) {
+	var urlValue=document.location.href;
+	
+	//Get query string value
+	var searchUrl=location.search;
+	
+	if(key!="") {
+		oldValue = getParameterByName(key);
+		removeVal=key+"="+oldValue;
+		newVal = key+"="+value;
+	
+		if(searchUrl.indexOf("?"+key+"=")!= "-1" ) {
+			urlValue = searchUrl.replace('?'+ removeVal ,'?'+ newVal );
+		}
+		else if(split_para_value(value, oldValue)==false) {
+			urlValue = searchUrl.replace('&'+removeVal,'&'+ newVal);	
+		}
+		else
+	    {
+			urlValue = searchUrl.replace('&'+ removeVal,'&'+newVal);	
+		}
+	
+	}
+	history.pushState({state:1, rand: Math.random()}, '', urlValue);
+}
+
+function split_para_value(text, comma_sep_val) {
+	var a = comma_sep_val.split(',');
+	for (var i = a.length - 1; i >= 0; i--) {
+		if (text == a[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function remove_param_val(text, comma_sep_val) {
+	var arr =comma_sep_val.split(',');
+	var itemtoRemove = text;
+	arr.splice($.inArray(itemtoRemove, arr), 1);
+	return arr.join(',');
+}
+
+
+function add_param_val(text, comma_sep_val) {
+	if (comma_sep_val != "" )
+	{
+		var arr =comma_sep_val.split(',');
+		var itemtoAdd = text;
+		arr.push(itemtoAdd)
+		return str =  arr.join(',');
+	}
+	else
+	{
+		return text;
+	}
+
+}
