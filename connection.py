@@ -13,7 +13,7 @@ instant_id = 0
 account_group = ''
 
 def postgres_conn():
-    conn = psycopg2.connect(database="postgres",user="postgres",password='Postgres@root',host='173.249.21.142')
+    conn = psycopg2.connect(database="postgres",user="postgres",password='root',host='173.249.21.142')
     return conn
 
 def set_url_table(_url_table):
