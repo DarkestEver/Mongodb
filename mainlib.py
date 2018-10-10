@@ -667,3 +667,65 @@ def send_email(subject, body):
         server.close()
     except:
         print('mail error')
+        
+def extract_company(driver):
+    global linkedin_user_name
+    company_link = driver.current_url
+    about_us = getDataByClass(driver, 'org-about-us-organization-description__text')
+    company_domain = getDataByClass(driver, 'org-about-company-module__company-page-url')
+    head_quater = getDataByClass(driver, 'org-about-company-module__headquarters')
+    founded_year = getDataByClass(driver, 'org-about-company-module__founded')
+    company_type = getDataByClass(driver, 'org-about-company-module__company-type')
+    employee_size = getDataByClass(driver, 'org-about-company-module__company-staff-count-range')
+    company_name = getDataByClass(driver,'org-top-card-module__name')
+    addressess =  getDataByClass(driver,'org-location-viewer__location-card-list')
+    dic_company_details = {
+             'company_link1':company_link,
+             'about_us':about_us,
+             'company_domain':company_domain,
+             'head_quater':head_quater,
+             'founded_year':founded_year,
+             'company_type':company_type,
+             'employee_size':employee_size,
+             'company_name1':company_name,
+             'addressess': addressess
+            }
+    return dic_company_details
+
+
+def run_company_extraction(driver):   
+    # status 0 - not run , 1- working, 2- done, 3- expection
+    urlcount = 0
+    global linked_user_name
+    while connect.num_of_url() != 0:
+        urlcount = urlcount + 1
+        if urlcount < 50:
+            row = connect.read_dom_url()
+            company_code = row[1]
+            url = 'https://www.linkedin.com/company/' + str(company_code)
+            idd = row[0]
+            try:
+                sleep(3)
+                driver.get(url)
+                sleep(10)
+                driver.execute_script( 'window.scrollTo(0,50);')
+                sleep(10)
+                try:
+                    driver.find_element_by_id('org-about-company-module__show-details-btn').click()
+                except:
+                    pass
+                sleep(5)
+                driver.execute_script( 'window.scrollTo(0,50);')
+                sleep(10)
+                dic_company_details = extract_company(driver)
+                dic_company_details['linkedin_user_name'] = linked_user_name
+                connect.updateDomFromDict(dic_company_details,company_code)
+            except Exception as e  :
+                print('error', str(e))           
+                connect.update_dom_url(idd,3)
+        else:
+            driver.close()
+            driver.quit()
+            urlcount = 0
+
+                   
