@@ -175,3 +175,43 @@ def set_account_overlimit():
         cursor.close()
         conn.close()
 
+
+def read_dom_url():
+    global url_table,id
+    conn = postgres_conn()
+    print('read_url')
+    cursor = conn.cursor()
+    cursor.execute("select id, company_code from  %s where  status=%d limit 1" % (url_table,instant_id))
+    row = cursor.fetchone()
+    did = row[0]
+    cursor.execute("UPDATE %s  SET status = 1  WHERE id = %d" % (url_table,did))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return row
+
+def update_dom_url(idd,status):
+    global url_table
+    conn =postgres_conn()
+    print('update_url')
+    cursor = conn.cursor()
+    cursor.execute("UPDATE %s SET status= %s WHERE id = %d" % (url_table,status,idd))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    
+def updateDomFromDict( dict, company_code):
+    global url_table
+    sql = 'update  ' + url_table +  ' set '
+    for n in dict:
+        sql = sql + " " + n + " = '" + removesinglequote( dict[n] ) + "' ,"
+    sql = sql + ' status = 2 '
+    sql = sql + " where company_code = '" + company_code + "'"    
+    conn =postgres_conn()
+    print('update_url')
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    conn.commit()
+    cursor.close()
+    conn.close()
