@@ -1,4 +1,4 @@
-
+﻿
 
 
 from time import sleep
@@ -382,9 +382,22 @@ def action_linkedin_login(driver, _username, _password):
         sleep(randsec())
         driver.find_element_by_name("session_key").send_keys(username)
         sleep(randsec())
-        password = driver.find_element_by_id("session_password-login").send_keys(password)
+        try:
+        	password = driver.find_element_by_id("session_password-login").send_keys(password)	
+        except Exception as e:
+            try:
+            	password = driver.find_element_by_id("password").send_keys(password)	
+            except Exception as e:
+            	pass
+        
         sleep(randsec())
-        sndbutton = driver.find_element_by_id("btn-primary")
+        try:
+        	sndbutton = driver.find_element_by_id("btn-primary")	
+        except Exception as e:
+            try:
+            	sndbutton = driver.find_element_by_class_name("btn__primary--large")
+            except Exception as e:
+            	pass
         sndbutton.submit()
         time.sleep(60)
         if is_logged_in(driver):
@@ -448,6 +461,7 @@ def findcount(driver, url, ui_type=1):
     
 def scarp(driver, diff_quit=14400):
     linkedin_network(driver)
+    run_company_extraction(driver)
     sec_then = time.time()
     try:
         global linked_user_name
@@ -496,10 +510,6 @@ def scarp(driver, diff_quit=14400):
                 driver.get(url)
                 print('new url ')
                 connect.set_account_urlcount()
-                time.sleep(randsec())
-                driver.execute_script( 'window.scrollTo(0,document.body.scrollHeight);')
-                time.sleep(1)
-                driver.execute_script( 'window.scrollTo(0,document.body.scrollHeight);')
                 hideglobalhelp(driver,ui_type)
                 if if_account_blocked(driver) == False:
                     log_mesage('account blocked')
@@ -512,6 +522,10 @@ def scarp(driver, diff_quit=14400):
                     pagination = 0 
                     while scrap:
                         if if_account_blocked(driver) and if_empty_search(driver):
+                            time.sleep(randsec())
+                            driver.execute_script( 'window.scrollTo(0,document.body.scrollHeight);')
+                            time.sleep(1)
+                            driver.execute_script( 'window.scrollTo(0,document.body.scrollHeight);')
                             pagination = pagination + 1
                             count_p = 0
                             result_container = ""
@@ -679,6 +693,7 @@ def extract_company(driver):
     employee_size = getDataByClass(driver, 'org-about-company-module__company-staff-count-range')
     company_name = getDataByClass(driver,'org-top-card-module__name')
     addressess =  getDataByClass(driver,'org-location-viewer__location-card-list')
+    industry = getDataByClass(driver,'company-industries') 
     dic_company_details = {
              'company_link1':company_link,
              'about_us':about_us,
@@ -688,18 +703,20 @@ def extract_company(driver):
              'company_type':company_type,
              'employee_size':employee_size,
              'company_name1':company_name,
-             'addressess': addressess
+             'addressess': addressess,
+             'industry':industry
             }
     return dic_company_details
 
-
 def run_company_extraction(driver):   
+    print('starting company extraction')
     # status 0 - not run , 1- working, 2- done, 3- expection
     urlcount = 0
+    limit = randint(5,10)
     global linked_user_name
-    while connect.num_of_url() != 0:
-        urlcount = urlcount + 1
-        if urlcount < 50:
+    while connect.num_of_url_dom() != 0 and urlcount < limit:
+            urlcount = urlcount + 1
+            print(urlcount)
             row = connect.read_dom_url()
             company_code = row[1]
             url = 'https://www.linkedin.com/company/' + str(company_code)
@@ -722,10 +739,6 @@ def run_company_extraction(driver):
                 connect.updateDomFromDict(dic_company_details,company_code)
             except Exception as e  :
                 print('error', str(e))           
-                connect.update_dom_url(idd,3)
-        else:
-            driver.close()
-            driver.quit()
-            urlcount = 0
-
-                   
+                connect.update_dom_url(company_code,3)
+                return
+    print('ending company extraction')
